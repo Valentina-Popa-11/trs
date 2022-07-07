@@ -1,0 +1,145 @@
+
+import re
+
+def from_term_to_tree(term):
+    tree = list()
+    position = '0'
+    for ind, elem in enumerate(term):
+        if ind == 0:
+            if re.search(elem + '[(].', term):
+                children = re.search(elem + '[(].+[)]', term)
+                tree.append([
+                    'value: ' + elem + ', ' + 'position: 0' + ', ' +
+                    'arity: 2, type: function, ' + 'children: ' + children.group(0)[1:]])
+                term2 = term[1:]
+            else:
+                return 'Expression is not correct'
+        else:
+            if elem == '(':
+                if position == '0':
+                    position = '1'
+                else:
+                    position = position + '1'
+                term2 = term2[1:]
+            elif elem == ',':
+                if len(position) == 1 and int(position) >= 2:
+                    position = '2'
+                else:
+                    position = position[:-1] + str(int(position[-1])+1)
+                term2 = term2[1:]
+            elif elem == ')':
+                position = position[0:-1]
+                term2 = term2[1:]
+            elif elem.islower() and not re.search(elem + '[(]', term2):
+                tree.append([
+                    'value: ' + elem + ', ' + 'position: ' + str(position) + ', ' +
+                    'arity: 0, type: variable, ' + 'children: 0'])
+                term2 = term2[1:]
+            elif elem.islower() and re.search(elem+'[(]', term2):
+                parenthesis = 0
+                par = 0
+                for i, j in enumerate(term2):
+                    if j == '(':
+                        parenthesis += 1
+                    elif j == ')':
+                        break
+                # par2=parenthesis
+                while i <= len(term2):
+                    if term2[i] == ')':
+                       par += 1
+                    elif term2[i] == '(':
+                        parenthesis += 1
+                    if parenthesis == par:
+                        pos = i
+                        break
+                    i += 1
+                children = term2[1:pos+1]
+                if children[2] == ',':
+                    arity = '2'
+                elif children[2] == '(':
+                    par2 = 1
+                    par3 = 0
+                    for i in range(3, len(children)-1):
+                        if children[i] == '(':
+                            par2 += 1
+                        elif children[i] == ')':
+                            par3 += 1
+                            if par2 == par3 and children[i+1] == ',':
+                                arity = '2'
+                            elif par2 == par3 and children[i+1] != ',':
+                                arity = '1'
+                else:
+                    arity = '1'
+                # children = re.search(elem + '[(]([^)]+[^,][^a-zA-Z][^(])[)]', term2)
+                #i[(]([^)]+[^,][^a-zA-Z][^(])[)]
+                tree.append([
+                    'value: ' + elem + ', ' + 'position: ' + str(position) + ', ' +
+                    'arity: ' + arity +
+                    ', type: function, ' + 'children: ' + children])
+                term2 = term2[1:]
+            elif elem.isupper():
+                tree.append([
+                    'value: ' + elem + ', ' + 'position: ' + str(position) + ', ' +
+                    'arity: 0, type: constant, ' + 'children: 0'])
+                term2 = term2[1:]
+    return tree
+
+# term = 'f(e,f(x,i(x)))'
+# term2 = 'f(x,f(i(f(x,f(H,j))),h(g(x),Y)))'
+term3 = 'f(g(f(x,y),e),y)'
+# term4 = 'f(e,g(x,i(y,e)))'
+# [print(i) for i in from_term_to_tree(term)]
+# [print(i) for i in from_term_to_tree(term2)]
+# [print(i) for i in from_term_to_tree(term3)]
+# [print(i) for i in from_term_to_tree(term4)]
+
+
+def substitution(term, mapping):
+    substit = list(term)
+    for ind, item in enumerate(term):
+        if item in mapping:
+            substit[ind] = mapping[item]
+
+    return ''.join(substit)
+
+term = 'f(y,f(x,y))'
+maping = {'x':'i(y)', 'y':'e'}
+# term2 = 'f(h,f(z),f(g(y), x))'
+# maping2 = {'h': 'B', 'x': 'f(z)', 'z': 'g(x,o)'}
+# print(substitution(term, maping))
+# print(substitution(term2, maping2))
+
+
+def composition_of_substitutions(map1, map2):
+    composition = dict()
+    for i in map1:
+        if i not in composition:
+            composition[i] = map1[i]
+    colapse = 0
+    for i in map2:
+        if i not in composition and i not in composition.values():
+            composition[i] = map2[i]
+        for key, val in composition.items():
+            if i in val and key != map2[i]:
+                v = list(val)
+                v = [map2[i] if j == i else j for j in v]
+                composition[key] = ''.join(v)
+                break
+            if i == val and key == map2[i]:
+                del composition[key]
+                composition[i] = map2[i]
+                colapse = 1
+                break
+        if colapse == 1:
+            break
+
+    return composition
+
+theta = {'x': 'f(y)', 'y': 'z'}
+sigma = {'x': 'a', 'y': 'b', 'z': 'y'}
+theta2 = {'p': 'i(k)', 'x': 'i(y)', 'y': 'z'}
+sigma2 = {'y': 'f(x,y)', 'z': 'y', 'x': 'g(z)'}
+# print(composition_of_substitutions(theta, sigma))
+# print(composition_of_substitutions(theta2, sigma2))
+
+
